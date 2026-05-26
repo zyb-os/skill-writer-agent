@@ -1,13 +1,18 @@
 """
-skill-writer-agent — saves completed workflows as reusable learned skills AND
-exposes callable capabilities so the planner can explicitly manage skills.
+skill-writer-agent — saves completed workflows as reusable learned-workflow skills
+AND exposes callable capabilities so the planner can explicitly manage them.
+
+These skills are locally stored workflow patterns (goal + ordered steps).
+They are DISTINCT from:
+  - The MCP tools registry / skills catalog (installable MCP servers)
+  - The installed skills store managed by the skill-loader-agent
 
 Passive mode: auto-saves any workflow_completed event (when skill_learning_enabled).
 Active capabilities (always available):
-  write_skill    — explicitly save a plan/description as a named skill
-  search_skills  — FTS search over saved skills
-  list_skills    — list all saved skills with metadata
-  delete_skill   — remove a skill by id
+  write_skill    — explicitly save a plan/description as a named learned-workflow skill
+  search_skills  — FTS search over saved learned-workflow skills
+  list_skills    — list all saved learned-workflow skills with metadata
+  delete_skill   — remove a learned-workflow skill by id
 """
 from __future__ import annotations
 
@@ -77,18 +82,20 @@ CAPABILITIES = [
     {
         "name": "search_skills",
         "description": (
-            "Full-text search over saved learned skills by goal/description. "
+            "Full-text search over locally saved learned-workflow skills by goal/description. "
+            "These are workflow patterns previously saved via write_skill or auto-learned — "
+            "NOT the MCP tools registry or installable skills catalog. "
             "Returns up to `limit` matching skills with their plans. "
-            "Useful for the planner to check if a skill already exists before "
+            "Useful for the planner to check if a reusable workflow already exists before "
             "planning from scratch."
         ),
-        "tags": ["skill", "search", "find", "lookup"],
+        "tags": ["skill", "search", "find", "lookup", "learned-workflow"],
         "input_schema": {
             "type": "object",
             "properties": {
                 "query": {
                     "type": "string",
-                    "description": "Keywords to search for in skill goals.",
+                    "description": "Keywords to search for in saved workflow skill goals.",
                 },
                 "limit": {
                     "type": "integer",
@@ -102,10 +109,12 @@ CAPABILITIES = [
     {
         "name": "list_skills",
         "description": (
-            "List all saved learned skills sorted by creation date (newest first). "
+            "List all locally saved learned-workflow skills sorted by creation date (newest first). "
+            "These are workflow patterns previously saved via write_skill or auto-learned — "
+            "NOT the MCP tools registry or installable skills catalog. "
             "Returns id, goal, step_count, use_count, created_at for each skill."
         ),
-        "tags": ["skill", "list", "catalog"],
+        "tags": ["skill", "list", "learned-workflow"],
         "input_schema": {
             "type": "object",
             "properties": {
@@ -163,9 +172,11 @@ class SkillWriterAgent:
                 "id":          self._agent_id,
                 "name":        AGENT_NAME,
                 "description": (
-                    "Saves completed workflows as reusable learned skills and provides "
-                    "capabilities to write, search, list, and delete skills. Also "
-                    "passively auto-saves workflows when skill_learning_enabled=true."
+                    "Saves completed workflows as reusable learned-workflow skills and provides "
+                    "capabilities to write, search, list, and delete them. "
+                    "Operates on locally stored workflow patterns only — not the MCP tools "
+                    "registry or the installable skills catalog. "
+                    "Also passively auto-saves workflows when skill_learning_enabled=true."
                 ),
                 "capabilities": CAPABILITIES,
                 "version":     "1.0.0",
